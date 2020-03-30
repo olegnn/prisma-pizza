@@ -1,0 +1,112 @@
+type User {
+  id: ID! @id
+  email: String! @unique
+  password: String!
+  phone: String!
+  name: String!
+  address1: String
+  address2: String
+  payment: String
+  orders: [Order!] @relation (name: "UserOrders")
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+}
+
+type Order implements Node {
+  id: ID! @id
+  user: User @relation (link: TABLE, name: "UserOrders")
+  products: [ProductOrder!]!
+  email: String!
+  phone: String!
+  name: String!
+  time: DateTime
+  address1: String!
+  address2: String!
+  payment: String!
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+}
+
+type ToppingOrder implements Node {
+  id: ID! @id
+  topping: Topping! @relation(link: INLINE)
+  createdAt: DateTime! @createdAt
+  quantity: Int
+}
+
+type ProductOrder {
+  id: ID! @id
+  product: Product! @relation(link: INLINE)
+  quantity: Int!
+  createdAt: DateTime! @createdAt
+  configuration: ProductConfiguration
+  toppings: [ToppingOrder!]
+}
+
+enum Currency {
+  GBP
+  EUR
+  USD
+  RUB
+}
+
+enum Category {
+  Pizza
+  Drink
+  Dessert
+  Soup
+}
+
+enum ImageSize {
+  Large
+  Medium
+  Small
+}
+
+type Price {
+  id: ID! @id
+  currency: Currency!
+  amount: Int!
+}
+
+type ProductConfiguration implements Node {
+  id: ID! @id
+  seqId: Int!
+  attr: String!
+  prices: [Price!]! @relation(link: TABLE, name: "ProductPrices")
+  weight: Int
+  capacity: Int
+}
+
+type Product implements Node {
+  id: ID! @id
+  name: String!
+  category: Category!
+  configurations: [ProductConfiguration!]! @relation(link: TABLE, name: "ProductConfiguration")
+  toppings: [Topping!] @relation(link: TABLE, name: "ProductToppings")
+  images: [Image!] @relation(link: TABLE, name: "ProductImages")
+  createdAt: DateTime! @createdAt
+  popularity: Float
+  maxQuantity: Int
+  description: String
+}
+
+type Topping implements Node {
+  id: ID! @id
+  name: String!
+  prices: [Price!]! @relation(link: TABLE, name: "ToppingPrices")
+  image: Image! @relation(link: INLINE)
+  description: String!
+  maxQuantity: Int
+}
+
+type Image implements Node {
+  id: ID! @id
+  size: ImageSize!
+  source: String!
+  alt: String
+}
+
+interface Node {
+  id: String!
+}

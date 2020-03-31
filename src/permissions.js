@@ -50,14 +50,18 @@ const rules = {
                 connect: yup.object().shape({ id: yup.string().required() })
               }),
               toppings: yup.object().shape({
-                create: yup.object().shape({
-                  quantity: yup.number().required(),
-                  topping: yup.object().shape({
-                    connect: yup.array(
-                      yup.object().shape({ id: yup.string().required() })
-                    )
-                  })
-                })
+                create: yup
+                  .array(
+                    yup.object().shape({
+                      quantity: yup.number().required(),
+                      topping: yup.object().shape({
+                        connect: yup.array(
+                          yup.object().shape({ id: yup.string().required() })
+                        )
+                      })
+                    })
+                  )
+                  .nullable()
               })
             })
           )

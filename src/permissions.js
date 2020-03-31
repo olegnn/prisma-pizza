@@ -55,9 +55,9 @@ const rules = {
                     yup.object().shape({
                       quantity: yup.number().required(),
                       topping: yup.object().shape({
-                        connect: yup.array(
-                          yup.object().shape({ id: yup.string().required() })
-                        )
+                        connect: yup
+                          .object()
+                          .shape({ id: yup.string().required() })
                       })
                     })
                   )

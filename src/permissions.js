@@ -1,6 +1,15 @@
-const { rule, and, shield, or, deny, allow } = require("graphql-shield");
+const {
+  rule,
+  inputRule,
+  and,
+  shield,
+  or,
+  deny,
+  allow
+} = require("graphql-shield");
+const yup = require("yup");
 const { verify } = require("jsonwebtoken");
-const { getUserId } = require("./helpers");
+const { getUserId, isUserAdmin } = require("./helpers");
 
 const rules = {
   isAuthenticatedUser: rule()((parent, args, context) => {
@@ -9,30 +18,68 @@ const rules = {
   }),
 
   isAdmin: rule()((parent, args, context) => {
-    console.log(context.request.ip);
-    return false;
+    return isUserAdmin(context);
   }),
 
   canSendOrder: rule()((parent, args, context) => {
     return true;
   }),
 
-  isNotAuthorizedUser: rule()(() => true)
+  isValidOrder: inputRule()(yup =>
+    yup.object().shape({
+      data: yup.object().shape({
+        name: yup.string().required(),
+        email: yup
+          .string()
+          .email()
+          .nullable()
+          .notRequired(),
+        time: yup
+          .date()
+          .nullable()
+          .notRequired(),
+        phone: yup.string().required(),
+        address1: yup.string().required(),
+        address2: yup.string().required(),
+        payment: yup.string().nullable(),
+        products: yup.object().shape({
+          create: yup.array(
+            yup.object().shape({
+              quantity: yup.number().required(),
+              configuration: yup.object().shape({
+                connect: yup.object().shape({ id: yup.string().required() })
+              }),
+              toppings: yup.object().shape({
+                create: yup.object().shape({
+                  quantity: yup.number().required(),
+                  topping: yup.object().shape({
+                    connect: yup.array(
+                      yup.object().shape({ id: yup.string().required() })
+                    )
+                  })
+                })
+              })
+            })
+          )
+        })
+      })
+    })
+  )
 };
 
-const allowType = (typeName, cond) => ({
+const setTypePermission = (typeName, cond) => ({
   [typeName]: cond,
   [`${typeName}Edge`]: cond,
   [`${typeName}Connection`]: cond
 });
 
 const permissions = shield({
-  ...allowType("Product", allow),
-  ...allowType("ProductConfiguration", allow),
-  ...allowType("Topping", allow),
-  ...allowType("Price", allow),
-  ...allowType("Image", allow),
-  ...allowType("User", rules.isAuthenticatedUser),
+  ...setTypePermission("Product", allow),
+  ...setTypePermission("ProductConfiguration", allow),
+  ...setTypePermission("Topping", allow),
+  ...setTypePermission("Price", allow),
+  ...setTypePermission("Image", allow),
+  ...setTypePermission("User", rules.isAuthenticatedUser),
   PageInfo: allow,
   Node: allow,
   Order: allow,
@@ -49,17 +96,13 @@ const permissions = shield({
     products: allow,
     product: allow,
     state: allow
-    // productOrders: rules.isAdmin,
-    // toppingOrders: rules.isAdmin
   },
   Mutation: {
     "*": rules.isAdmin,
-    createOrder: or(rules.canSendOrder, rules.isAdmin)
-    //updateOrder: rules.isAdmin,
-    //deleteOrder: rules.isAdmin,
-    //createProduct: rules.isAdmin
-    // deletePost: rules.isPostOwner,
-    // publish: rules.isPostOwner
+    createOrder: or(and(rules.canSendOrder, rules.isValidOrder), rules.isAdmin)
+  },
+  Subscription: {
+    "*": rules.isAdmin
   }
 });
 

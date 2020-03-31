@@ -1,28 +1,47 @@
-const Mutation = {
-  signUp: async (parent, { name, email, password }, context) => {
+const { compare, hash } = require("bcryptjs");
+const { sign } = require("jsonwebtoken");
+
+const APP_SECRET = process.env.APP_SECRET;
+
+module.exports = ({ prisma }) => ({
+  signUp: async (
+    { name, phone, email, password, address1, address2, payment },
+    info
+  ) => {
     const hashedPassword = await hash(password, 10);
-    const user = await context.prisma.createUser({
-      name,
-      email,
-      password: hashedPassword
+    const user = await prisma.mutation.createUser({
+      data: {
+        name,
+        phone,
+        email,
+        password: hashedPassword,
+        address1,
+        address2,
+        payment
+      }
     });
-    return {
-      token: sign({ userId: user.id }, APP_SECRET),
-      user
-    };
+    return sign({ userId: user.id }, APP_SECRET, { expiresIn: 60 * 15 });
   },
-  login: async (parent, { email, password }, context) => {
-    const user = await context.prisma.user({ email });
+  login: async ({ email, password }, info) => {
+    const user = await prisma.query.user(
+      { where: { email } },
+      `{
+      id
+      email
+      password
+      roles
+    }`
+    );
     if (!user) {
-      throw new Error(`No user found for email: ${email}`);
+      throw new Error(`Invalid email/password combination`);
     }
     const passwordValid = await compare(password, user.password);
     if (!passwordValid) {
-      throw new Error("Invalid password");
+      throw new Error("Invalid email/password combination");
     }
-    return {
-      token: sign({ userId: user.id }, APP_SECRET),
-      user
-    };
+    console.log(`Granted access to ${email} with roles ${user.roles}`);
+    return sign({ userId: user.id, roles: user.roles }, APP_SECRET, {
+      expiresIn: 60 * 15
+    });
   }
-};
+});

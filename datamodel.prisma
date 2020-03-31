@@ -1,6 +1,7 @@
 type User {
   id: ID! @id
   email: String! @unique
+  roles: [UserRole!] @scalarList(strategy: RELATION)
   password: String!
   phone: String!
   name: String!
@@ -41,6 +42,10 @@ type ProductOrder {
   createdAt: DateTime! @createdAt
   configuration: ProductConfiguration
   toppings: [ToppingOrder!]
+}
+
+enum UserRole {
+  Admin
 }
 
 enum Currency {

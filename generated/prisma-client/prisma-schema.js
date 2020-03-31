@@ -2187,6 +2187,7 @@ input ToppingWhereUniqueInput {
 type User {
   id: ID!
   email: String!
+  roles: [UserRole!]!
   password: String!
   phone: String!
   name: String!
@@ -2207,6 +2208,7 @@ type UserConnection {
 input UserCreateInput {
   id: ID
   email: String!
+  roles: UserCreaterolesInput
   password: String!
   phone: String!
   name: String!
@@ -2221,9 +2223,14 @@ input UserCreateOneWithoutOrdersInput {
   connect: UserWhereUniqueInput
 }
 
+input UserCreaterolesInput {
+  set: [UserRole!]
+}
+
 input UserCreateWithoutOrdersInput {
   id: ID
   email: String!
+  roles: UserCreaterolesInput
   password: String!
   phone: String!
   name: String!
@@ -2263,6 +2270,7 @@ enum UserOrderByInput {
 type UserPreviousValues {
   id: ID!
   email: String!
+  roles: [UserRole!]!
   password: String!
   phone: String!
   name: String!
@@ -2271,6 +2279,10 @@ type UserPreviousValues {
   payment: String
   createdAt: DateTime!
   updatedAt: DateTime!
+}
+
+enum UserRole {
+  Admin
 }
 
 type UserSubscriptionPayload {
@@ -2293,6 +2305,7 @@ input UserSubscriptionWhereInput {
 
 input UserUpdateInput {
   email: String
+  roles: UserUpdaterolesInput
   password: String
   phone: String
   name: String
@@ -2304,6 +2317,7 @@ input UserUpdateInput {
 
 input UserUpdateManyMutationInput {
   email: String
+  roles: UserUpdaterolesInput
   password: String
   phone: String
   name: String
@@ -2321,8 +2335,13 @@ input UserUpdateOneWithoutOrdersInput {
   connect: UserWhereUniqueInput
 }
 
+input UserUpdaterolesInput {
+  set: [UserRole!]
+}
+
 input UserUpdateWithoutOrdersDataInput {
   email: String
+  roles: UserUpdaterolesInput
   password: String
   phone: String
   name: String

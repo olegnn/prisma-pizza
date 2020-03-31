@@ -21,6 +21,10 @@ var models = [
     embedded: false
   },
   {
+    name: "UserRole",
+    embedded: false
+  },
+  {
     name: "Currency",
     embedded: false
   },
@@ -56,6 +60,7 @@ var models = [
 exports.Prisma = prisma_lib_1.makePrismaClientClass({
   typeDefs,
   models,
-  endpoint: `http://localhost:4466`
+  endpoint: `https://eu1.prisma.sh/oleg-nosov-8ddada/pizza-prisma/dev`,
+  secret: `${process.env["PRISMA_SECRET"]}`
 });
 exports.prisma = new exports.Prisma();

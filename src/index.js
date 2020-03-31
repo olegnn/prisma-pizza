@@ -10,61 +10,35 @@ const { execute } = require("graphql");
 const { delegateToSchema } = require("graphql-tools");
 const { getUserId } = require("./helpers");
 
-const localForwardMiddleware = forward("Query.state", "Query.me")("local");
+const localForwardMiddleware = forward(
+  "Query.state",
+  "Query.me",
+  "Mutation.login",
+  "Mutation.signUp"
+)("local");
 const prismaForwardMiddleware = forward("Query", "Mutation")("prisma");
 
 const prisma = new Prisma({
   typeDefs: prismaSchema,
-  endpoint: "http://localhost:4466"
+  endpoint: process.env.PRISMA_ENDPOINT,
+  secret: process.env.PRISMA_SECRET
 });
 
 const server = new GraphQLServer({
   typeDefs: `
-  ${prismaSchema}
+  ${prismaSchema.replace()}
 
   ${extendedSchema}
 `,
-  resolvers: {
-    /*State: {
-      deliveryPrice: () => 
-    },*/
-    Query: {
-      state: () => ({
-        deliveryPrice: [
-          { currency: "USD", amount: 500 },
-          { currency: "EUR", amount: 450 }
-        ]
-      })
-    }
-  },
-  middlewares: [
-    localForwardMiddleware,
-    permissions,
-    prismaForwardMiddleware
-  ],
+  resolvers: {},
+  middlewares: [localForwardMiddleware, permissions, prismaForwardMiddleware],
   context: request => {
     return {
       ...request,
       prisma,
-      local: {
-        query: {
-          state: () => ({
-            deliveryPrice: [
-              { currency: "USD", amount: 500 },
-              { currency: "EUR", amount: 450 }
-            ]
-          }),
-          me: (args, context, info) => {
-            const id = getUserId(request);
-            return id && prisma.query.user({ where: { id } });
-            //console.log(context.request.get("Authorization"));
-          }
-        }
-      }
+      local: resolvers({ ...request, prisma })
     };
   }
 });
-
-//console.log(server.executableSchema.getType("Mutation").getFields());
 
 server.start(() => console.log("Server is running on http://localhost:4000"));
